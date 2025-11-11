@@ -1,19 +1,20 @@
 const express = require('express');
 const dotenv = require('dotenv');
+dotenv.config();
+
 // const mongoose = require('mongoose');
 
 const movieRoutes = require('./routes/movieRoutes');
 const authRoutes = require('./routes/authRoutes');
 
-// const connectDB = require('./config/db');
+const connectDB = require('./db');
 
 const PORT = process.env.PORT || 8080;
-
-dotenv.config();    
+    
 const app = express();
 app.use(express.json());
 
-// connectDB();
+connectDB();
 
 app.use('/movies', movieRoutes);
 app.use('/auth', authRoutes);

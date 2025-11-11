@@ -1,28 +1,38 @@
-const Auth = require('./models/User');
+const User = require('../models/modelUser');
+const bcrypt = require("bcryptjs");
 
-exports.getAll = async (req, res) => {
-  try {
-    const users = await Auth.find().sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-};
 
-exports.create = async (req, res) => {
+exports.registerUser = async (req, res) => {
   try {
-    const newUser = new Auth(req.body);
-    const saved = await newUser.save();
-    res.status(201).json(saved);
+    const { username, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      username,
+      password: hashedPassword
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: "User registered" });
+
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-exports.remove = async (req, res) => {
+
+
+exports.loginUser = async (req, res) => {
   try {
-    await Auth.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    if (!user) return res.status(401).json({ error: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: "Wrong password " });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
