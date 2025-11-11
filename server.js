@@ -1,23 +1,31 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
-const bookRoutes = require('./routes/bookRoutes');
-const authRoutes = require('./routes/authRoutes');
-const connectDB = require('./config/db');
+// const mongoose = require('mongoose');
 
-dotenv.config();    // wczyt z .env
+const movieRoutes = require('./routes/movieRoutes');
+const authRoutes = require('./routes/authRoutes');
+
+// const connectDB = require('./config/db');
+
+const PORT = process.env.PORT || 8080;
+
+dotenv.config();    
 const app = express();
 app.use(express.json());
 
-connectDB();
+// connectDB();
 
-app.use('/api/books', bookRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/movies', movieRoutes);
+app.use('/auth', authRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Coś poszło nie tak' });
+  res.status(500).json({ message: 'Error' });
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.get("/", (req, res) => {
+  res.send("Hello from server");
+});
+
+app.listen(PORT, () => 
+  console.log(`Server running on port ${PORT}`));
