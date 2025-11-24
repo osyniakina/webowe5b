@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "target": "ES2020",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ES2020"
+        ],
+        "baseUrl": "src"
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

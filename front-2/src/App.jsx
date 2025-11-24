@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { getMovies, addMovie } from "../api";
+import { useEffect, useState } from 'react'
+import './App.css'
+import { addMovie, getMovies } from './api/movies';
 
 function App() {
   const [movies, setMovies] = useState([]);
@@ -74,5 +75,4 @@ function App() {
   );
 }
 
-export default App;
-
+export default App
