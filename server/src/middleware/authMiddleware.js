@@ -1,13 +1,24 @@
-export function auth(req, res, next) {
-  const token = req.headers.authorization;
+import jwt from "jsonwebtoken";
 
-  if (!token) {
+export function auth(req, res, next) {
+  const authHeader = req.headers.authorization; // "Bearer <token>"
+
+  if (!authHeader) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  if (token !== "secret123") {
-    return res.status(403).json({ error: "Forbidden" });
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  next();
+  const token = parts[1];
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload; // np  id, email, iat, exp 
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 }
