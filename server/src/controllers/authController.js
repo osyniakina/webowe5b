@@ -15,12 +15,14 @@ export default class AuthController {
 
   async registerUser(req, res) {
     try {
+      console.log("Registering user with data:", req.body);
+
       const { email, password } = req.body;
 
       if (!email || !password || password.length < 6) {
         return res.status(400).json({ error: "Invalid input" });
       }
-
+      //to userservice
       const existing = await User.findOne({ email });
       if (existing) return res.status(409).json({ error: "Email already in use" });
 
@@ -28,7 +30,8 @@ export default class AuthController {
 
       const newUser = new User({
         email,
-        password: hashedPassword
+        passwordHash: hashedPassword, 
+        role: 'user'
       });
 
       await newUser.save();
