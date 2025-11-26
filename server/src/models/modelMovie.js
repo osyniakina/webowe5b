@@ -5,7 +5,7 @@ const movieSchema = new Schema({
   director: String,
   year: Number,
   description: String,
-  genres: [String]
+  genre: String
 });
 
-export default model("Movie", movieSchema);
+export default model("Movie", movieSchema, "Movies");

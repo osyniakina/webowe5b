@@ -6,4 +6,4 @@ const userSchema = new Schema({
   role: { type: String, default: 'user' }
 });
 
-export default model("Users", userSchema, "Users");  //todo movies Movies
+export default model("Users", userSchema, "Users");  

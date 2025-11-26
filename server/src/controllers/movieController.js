@@ -1,9 +1,12 @@
 import Movie from '../models/modelMovie.js';
+import MovieService from '../services/movieService.js';
 import { Router } from "express";
+import jwt from "jsonwebtoken";
 
 export default class MovieController {
   constructor() {
     this.router = Router();
+    this.movieService = new MovieService(Movie);
 
     this.router.get("/", this.getAll.bind(this));
     this.router.get("/:id", this.getById.bind(this));
@@ -14,7 +17,7 @@ export default class MovieController {
 
   async getAll(req, res) {
     try {
-      const movies = await Movie.find().sort({ createdAt: -1 });
+      const movies = await this.movieService.getAllMovies();
       res.json(movies);
     } catch (err) {
       res.status(500).json({ error: 'Server error' });
@@ -23,19 +26,25 @@ export default class MovieController {
 
   async getById(req, res) {
     try {
-      const movie = await Movie.findById(req.params.id);
+      const movie = await this.movieService.getMovieById(req.params.id);
       if (!movie) return res.status(404).json({ error: 'Not found' });
       res.json(movie);
     } catch (err) {
       res.status(500).json({ error: 'Server error' });
     }
   }
-  
+
   async create(req, res) {
     try {
-      const newMovie = new Movie(req.body);
-      const saved = await newMovie.save();
-      res.status(201).json(saved);
+      const { title, director, year, description, genre } = req.body;
+
+      if (!title || !director || !year || !description || !genre) {
+        return res.status(400).json({ error: "Data required" });
+      }
+
+      const newMovie = await this.movieService.createMovie({ title, director, year, description, genre });
+
+      res.status(201).json({ message: "Movie added", movie: newMovie });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -43,7 +52,8 @@ export default class MovieController {
 
   async update(req, res) {
     try {
-      const updated = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      const updated = await this.movieService.updateMovie(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Not found' });
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -52,14 +62,11 @@ export default class MovieController {
 
   async remove(req, res) {
     try {
-      await Movie.findByIdAndDelete(req.params.id);
+      await this.movieService.deleteMovie(req.params.id);
       res.json({ message: 'Deleted' });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   }
 }
-
-
-
 
