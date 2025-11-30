@@ -8,18 +8,44 @@ const getAuthHeader = () => {
   };
 };
 
+const authFetch = async (url, options = {}) => {
+  const headers = {
+    ...getAuthHeader(),
+    ...options.headers,
+  };
+
+  try {
+    const res = await fetch(url, { ...options, headers });
+
+    if (res.status === 401) {
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+
+    if (res.status === 204) {
+      return null;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.message || res.statusText || "Request failed");
+    }
+
+    return data;
+  } catch (err) {
+    throw err;
+  }
+};
+
 export const getMovies = async () => {
-  const res = await fetch(API_URL, {
-    headers: getAuthHeader()
-  });
-  return res.json();
+  return await authFetch(API_URL);
 };
 
 export const addMovie = async (movie) => {
-  const res = await fetch(API_URL, {
+  return await authFetch(API_URL, {
     method: "POST",
-    headers: getAuthHeader(),
-    body: JSON.stringify(movie)
+    body: JSON.stringify(movie),
   });
-  return res.json();
 };

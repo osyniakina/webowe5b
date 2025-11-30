@@ -1,3 +1,4 @@
+import { auth, requireRole } from "../middleware/authMiddleware.js";
 import Movie from '../models/modelMovie.js';
 import MovieService from '../services/movieService.js';
 import { Router } from "express";
@@ -8,11 +9,11 @@ export default class MovieController {
     this.router = Router();
     this.movieService = new MovieService(Movie);
 
-    this.router.get("/", this.getAll.bind(this));
-    this.router.get("/:id", this.getById.bind(this));
-    this.router.post("/", this.create.bind(this));
-    this.router.put("/:id", this.update.bind(this));
-    this.router.delete("/:id", this.remove.bind(this));
+    this.router.get("/", auth, this.getAll.bind(this));
+    this.router.get("/:id", auth, this.getById.bind(this));
+    this.router.post("/", auth, requireRole("admin"), this.create.bind(this));
+    this.router.put("/:id", auth, requireRole("admin"), this.update.bind(this));
+    this.router.delete("/:id", auth, requireRole("admin"), this.remove.bind(this));
   }
 
   async getAll(req, res) {

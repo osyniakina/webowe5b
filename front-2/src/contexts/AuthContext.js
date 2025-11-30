@@ -7,7 +7,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Симуляція перевірки токена з localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
