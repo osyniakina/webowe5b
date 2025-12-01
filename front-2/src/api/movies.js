@@ -1,10 +1,10 @@
 const API_URL = "http://localhost:5000/movies";
 
 const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = localStorage.getItem("token");
   return {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${user.token || ""}`
+    "Authorization": `Bearer ${token || ""}`
   };
 };
 
@@ -18,7 +18,7 @@ const authFetch = async (url, options = {}) => {
     const res = await fetch(url, { ...options, headers });
 
     if (res.status === 401) {
-      localStorage.removeItem("user");
+      localStorage.removeItem("token");
       window.location.href = "/login";
       throw new Error("Unauthorized");
     }

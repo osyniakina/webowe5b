@@ -16,9 +16,29 @@ export async function login(userData) {
         }
 
         const result = await response.json();
-        localStorage.setItem("user", JSON.stringify(userData));
+        if (result.token) {
+            const user = parseJwt(result.token);
+
+            localStorage.setItem("role", user.role);
+            localStorage.setItem("token", result.token);
+        }
+
         console.log('Відповідь від сервера:', result);
     } catch (err) {
         console.error('Помилка при запиті:', err);
     }
 };
+
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+        atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+    );
+
+    return JSON.parse(jsonPayload);
+}
+
