@@ -16,9 +16,14 @@ export default class MovieService {
         return await this.movieModel.findById(id);
     }
 
+    escapeRegex(text) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    }
+
     async searchMovies(title) {
         if (!title) return await this.getAllMovies();
-        const regex = new RegExp(title, 'i');
+        const safe = this.escapeRegex(title);
+        const regex = new RegExp(safe, 'i');
         return await this.movieModel.find({ title: regex }).sort({ createdAt: -1 });
     }
 
