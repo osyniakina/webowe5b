@@ -3,29 +3,19 @@ import './App.css';
 import AuthPage from './pages/authPage';
 import MoviePage from './pages/moviePage';
 
-
 function App() {
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    if (token) {
-      setIsAuth(true);
-    } else {
-      setIsAuth(false);
-    }
+    setIsAuth(Boolean(token));
   }, []);
-
-
 
   return (
     <div style={{ padding: 40 }}>
-      <AuthPage />
-      {isAuth ? <MoviePage /> : <AuthPage />
-      }
+      {isAuth ? <MoviePage setIsAuth={setIsAuth} /> : <AuthPage setIsAuth={setIsAuth} />}
     </div>
   );
 }
 
-export default App
+export default App;

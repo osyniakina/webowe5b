@@ -1,72 +1,82 @@
-import { login } from "../api/auth";
+import { login, register } from "../api/auth";
 import { useState } from "react";
 
-export default function Auth(){
-	const [dataState, setDataState] = useState({
-		email: '',
-		password: '',
-	});
-
-	const [formState, setFormState] = useState({
-		isSending: false,
-	});
+export default function AuthPage({ setIsAuth }) {
+	const [mode, setMode] = useState("register");
+	const [dataState, setDataState] = useState({ email: "", password: "" });
+	const [isSending, setIsSending] = useState(false);
+	const [error, setError] = useState("");
 
 	const handleInputChange = (e) => {
 		const { name, value } = e.target;
-		setDataState((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setDataState((prev) => ({ ...prev, [name]: value }));
 	};
 
-	const handleSubmit = async (e) => {
-		e.preventDefault(); // блокуємо стандартну поведінку
+	const submit = async (e) => {
+		e.preventDefault();
+		setError("");
+		if (isSending) return;
+		setIsSending(true);
 
 		try {
-			if (formState.isSending) {
-				return;
+			if (mode === "register") {
+				await register(dataState);
+			} else {
+				await login(dataState);
 			}
-			setFormState((prev) => ({
-				...prev,
-				isSending: true,
-			}));
-			await login(dataState);
-        }
-        finally {
-			setFormState((prev) => ({
-				...prev,
-				isSending: false,
-			}));
+			// success: mark as authenticated and show movies
+			if (typeof setIsAuth === "function") setIsAuth(true);
+		} catch (err) {
+			setError(err.message || "Request failed");
+		} finally {
+			setIsSending(false);
 		}
-};
+	};
 
 	return (
-		<form onSubmit={void handleSubmit}>
-			<h2 >Sign In</h2>
+		<div style={{ maxWidth: 420 }}>
+			<h2>{mode === "register" ? "Register" : "Login"}</h2>
 
-			<div >
-				<input
-					name="email"
-					value={dataState.email}
-					onChange={handleInputChange}
-				/>
-			</div>
-			<div >
-				<input
-					name="password"
-					placeholder="Password"
-					type="password"
-					value={dataState.password}
-					onChange={handleInputChange}
-				/>
-			</div>
+			<form onSubmit={submit}>
+				<div style={{ marginBottom: 8 }}>
+					<input
+						name="email"
+						type="email"
+						placeholder="Email"
+						value={dataState.email}
+						onChange={handleInputChange}
+						required
+						style={{ width: "100%", padding: 8 }}
+					/>
+				</div>
 
-			<div>
-				<button
-					type="submit"
-					
-				>Login</button>
-			</div>
-		</form>
+				<div style={{ marginBottom: 8 }}>
+					<input
+						name="password"
+						type="password"
+						placeholder="Password (min 6 chars)"
+						value={dataState.password}
+						onChange={handleInputChange}
+						required
+						minLength={6}
+						style={{ width: "100%", padding: 8 }}
+					/>
+				</div>
+
+				{error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
+
+				<div style={{ display: "flex", gap: 8 }}>
+					<button type="submit" disabled={isSending}>
+						{isSending ? "Please wait..." : (mode === "register" ? "Register" : "Login")}
+					</button>
+					<button
+						type="button"
+						onClick={() => setMode(mode === "register" ? "login" : "register")}
+					>
+						{mode === "register" ? "Go to Login" : "Go to Register"}
+					</button>
+				</div>
+			</form>
+		</div>
 	);
-};
+}
