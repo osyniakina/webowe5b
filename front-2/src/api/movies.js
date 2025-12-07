@@ -43,9 +43,27 @@ export const getMovies = async () => {
   return await authFetch(API_URL);
 };
 
+export const searchMovies = async (title) => {
+  const q = title ? `?title=${encodeURIComponent(title)}` : "";
+  return await authFetch(`${API_URL}/search${q}`);
+};
+
 export const addMovie = async (movie) => {
   return await authFetch(API_URL, {
     method: "POST",
     body: JSON.stringify(movie),
+  });
+};
+
+export const updateMovie = async (id, movie) => {
+  return await authFetch(`${API_URL}/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(movie),
+  });
+};
+
+export const deleteMovie = async (id) => {
+  return await authFetch(`${API_URL}/${id}`, {
+    method: "DELETE",
   });
 };

@@ -1,7 +1,7 @@
 import { login, register } from "../api/auth";
 import { useState } from "react";
 
-export default function AuthPage({ setIsAuth }) {
+export default function AuthPage({ setIsAuth, setRole }) {
 	const [mode, setMode] = useState("register");
 	const [dataState, setDataState] = useState({ email: "", password: "" });
 	const [isSending, setIsSending] = useState(false);
@@ -19,13 +19,12 @@ export default function AuthPage({ setIsAuth }) {
 		setIsSending(true);
 
 		try {
-			if (mode === "register") {
-				await register(dataState);
-			} else {
-				await login(dataState);
+			const result = mode === "register" ? await register(dataState) : await login(dataState);
+			if (result?.token) {
+				const roleFromStorage = localStorage.getItem("role");
+				if (typeof setRole === "function") setRole(roleFromStorage);
+				if (typeof setIsAuth === "function") setIsAuth(true);
 			}
-			// success: mark as authenticated and show movies
-			if (typeof setIsAuth === "function") setIsAuth(true);
 		} catch (err) {
 			setError(err.message || "Request failed");
 		} finally {

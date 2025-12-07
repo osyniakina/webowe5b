@@ -1,16 +1,16 @@
-import { getMovies, addMovie } from "../api/movies";
+import { getMovies, searchMovies, addMovie, updateMovie, deleteMovie } from "../api/movies";
 import { useEffect, useState } from "react";
 
-export default function Movies({ setIsAuth }) {
+export default function Movies({ setIsAuth, role }) {
+    const isAdmin = role === "admin";
+
     const [movies, setMovies] = useState([]);
-    const [form, setForm] = useState({
-        title: "",
-        director: "",
-        year: "",
-        description: "",
-        genre: "Przygoda"
-    });
+    const [search, setSearch] = useState("");
+    const [form, setForm] = useState({ title: "", director: "", year: "", description: "", genre: "Przygoda" });
     const [error, setError] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingMovie, setEditingMovie] = useState(null);
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         loadMovies();
@@ -28,101 +28,199 @@ export default function Movies({ setIsAuth }) {
             const data = await getMovies();
             setMovies(data || []);
         } catch (err) {
-            console.error("Load movies error:", err);
             setError(err.message || "Cannot load movies");
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSearch = async (e) => {
+        const v = e.target.value;
+        setSearch(v);
+        try {
+            if (!v) {
+                await loadMovies();
+            } else {
+                const data = await searchMovies(v);
+                setMovies(data || []);
+            }
+        } catch (err) {
+            setError(err.message || "Search failed");
+        }
+    };
+
+    const handleAdd = async (e) => {
         e.preventDefault();
         setError("");
+        if (!isAdmin) return setError("Brak uprawnień");
 
         if (!form.title || !form.director || !form.year || !form.description || !form.genre) {
             setError("Wypełnij wszystkie pola");
             return;
         }
-
         const yearNumber = Number(form.year);
         if (!Number.isInteger(yearNumber) || yearNumber <= 0) {
-            setError("Podaj poprawny rok (liczba całkowita > 0)");
+            setError("Podaj poprawny rok");
             return;
         }
 
         try {
-            await addMovie({
-                title: form.title,
-                director: form.director,
-                year: yearNumber,
-                description: form.description,
-                genre: form.genre,
-            });
-
+            setIsSending(true);
+            await addMovie({ ...form, year: yearNumber });
             setForm({ title: "", director: "", year: "", description: "", genre: "Przygoda" });
             await loadMovies();
-
         } catch (err) {
-            console.error("Add movie error:", err);
-            setError(err.message || "Błąd podczas dodawania filmu");
+            setError(err.message || "Add failed");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const openEdit = (movie) => {
+        setEditingMovie({ ...movie });
+        setIsEditing(true);
+        setError("");
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditingMovie((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const saveEdit = async () => {
+        if (!isAdmin) return setError("Brak uprawnień");
+        if (!editingMovie.title || !editingMovie.director || !editingMovie.year || !editingMovie.description || !editingMovie.genre) {
+            setError("Wypełnij wszystkie pola");
+            return;
+        }
+        const yearNumber = Number(editingMovie.year);
+        if (!Number.isInteger(yearNumber) || yearNumber <= 0) {
+            setError("Podaj poprawny rok");
+            return;
+        }
+
+        try {
+            setIsSending(true);
+            await updateMovie(editingMovie._id, {
+                title: editingMovie.title,
+                director: editingMovie.director,
+                year: yearNumber,
+                description: editingMovie.description,
+                genre: editingMovie.genre
+            });
+            setIsEditing(false);
+            setEditingMovie(null);
+            await loadMovies();
+        } catch (err) {
+            setError(err.message || "Update failed");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!isAdmin) {
+            setError("Brak uprawnień");
+            return;
+        }
+        const ok = window.confirm("Are you sure you want to delete this movie?");
+        if (!ok) return;
+        try {
+            await deleteMovie(id);
+            await loadMovies();
+        } catch (err) {
+            setError(err.message || "Delete failed");
         }
     };
 
     return (
         <div style={{ padding: 40 }}>
-            <button onClick={logout} style={{ float: "left" }}>Logout</button>
-            <h1> Movies</h1>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <h1 style={{ margin: 0 }}>Movies</h1>
+                    <div>
+                        <input
+                            placeholder="Search by title..."
+                            value={search}
+                            onChange={handleSearch}
+                            style={{ padding: 6 }}
+                        />
+                    </div>
+                </div>
 
-            <form onSubmit={handleSubmit} style={{ marginBottom: 30 }}>
-                <input
-                    placeholder="Title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                />
-                <input
-                    placeholder="Director"
-                    value={form.director}
-                    onChange={(e) => setForm({ ...form, director: e.target.value })}
-                />
-                <input
-                    placeholder="Year"
-                    type="number"
-                    value={form.year}
-                    onChange={(e) => setForm({ ...form, year: e.target.value })}
-                />
-                <input
-                    placeholder="Description"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-                <label htmlFor="genres">Choose a genre:</label>
-                <select
-                    id="genres"
-                    name="genres"
-                    value={form.genre}
-                    onChange={(e) => setForm({ ...form, genre: e.target.value })}
-                >
-                    <option value="Przygoda">Przygoda</option>
-                    <option value="Komedia">Komedia</option>
-                    <option value="Horror">Horror</option>
-                    <option value="Fantasy">Fantasy</option>
-                    <option value="Triller">Triller</option>
-                    <option value="Romantyka">Romantyka</option>
-                    <option value="Dokument">Dokument</option>
-                    <option value="Fantastyka">Fantastyka</option>
-                </select>
+                <div>
+                    <span style={{ marginRight: 12 }}>{role}</span>
+                    <button onClick={logout}>Logout</button>
+                </div>
+            </div>
 
-                {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
+            {isAdmin && (
+                <form onSubmit={handleAdd} style={{ marginTop: 16, marginBottom: 24 }}>
+                    <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                    <input placeholder="Director" value={form.director} onChange={(e) => setForm({ ...form, director: e.target.value })} />
+                    <input placeholder="Year" type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
+                    <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                    <select value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })}>
+                        <option value="Przygoda">Przygoda</option>
+                        <option value="Komedia">Komedia</option>
+                        <option value="Horror">Horror</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Triller">Triller</option>
+                        <option value="Romantyka">Romantyka</option>
+                        <option value="Dokument">Dokument</option>
+                        <option value="Fantastyka">Fantastyka</option>
+                    </select>
+                    <button type="submit" disabled={isSending}>{isSending ? "Please wait..." : "Add"}</button>
+                </form>
+            )}
 
-                <button type="submit">Add</button>
-            </form>
+            {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
 
             <ul>
                 {movies.map((m) => (
-                    <li key={m._id}>
-                        {m.title} — {m.director} ({m.year}) {m.genre}<br />
-                        {m.description}
+                    <li key={m._id} style={{ marginBottom: 12 }}>
+                        <strong>{m.title}</strong> — {m.director} ({m.year}) <em>{m.genre}</em>
+                        <div>{m.description}</div>
+
+                        {isAdmin && (
+                            <div style={{ marginTop: 6 }}>
+                                <button onClick={() => openEdit(m)} style={{ marginRight: 8 }}>Edit</button>
+                                <button onClick={() => handleDelete(m._id)}>Delete</button>
+                            </div>
+                        )}
                     </li>
                 ))}
             </ul>
+
+            {/* Edit modal (simple) */}
+            {isEditing && editingMovie && (
+                <div style={{
+                    position: "fixed", left: 0, top: 0, right: 0, bottom: 0,
+                    background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center",
+                    justifyContent: "center", zIndex: 9999
+                }}>
+                    <div style={{ background: "#fff", padding: 20, minWidth: 320 }}>
+                        <h3>Edit movie</h3>
+                        <input name="title" value={editingMovie.title} onChange={handleEditChange} />
+                        <input name="director" value={editingMovie.director} onChange={handleEditChange} />
+                        <input name="year" type="number" value={editingMovie.year} onChange={handleEditChange} />
+                        <input name="description" value={editingMovie.description} onChange={handleEditChange} />
+                        <select name="genre" value={editingMovie.genre} onChange={handleEditChange}>
+                            <option value="Przygoda">Przygoda</option>
+                            <option value="Komedia">Komedia</option>
+                            <option value="Horror">Horror</option>
+                            <option value="Fantasy">Fantasy</option>
+                            <option value="Triller">Triller</option>
+                            <option value="Romantyka">Romantyka</option>
+                            <option value="Dokument">Dokument</option>
+                            <option value="Fantastyka">Fantastyka</option>
+                        </select>
+
+                        <div style={{ marginTop: 12 }}>
+                            <button onClick={saveEdit} disabled={isSending}>{isSending ? "Saving..." : "Save"}</button>
+                            <button onClick={() => { setIsEditing(false); setEditingMovie(null); }} style={{ marginLeft: 8 }}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-};
+}

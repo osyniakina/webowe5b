@@ -11,6 +11,7 @@ export default class MovieController {
 
     this.router.get("/", auth, this.getAll.bind(this));
     this.router.get("/:id", auth, this.getById.bind(this));
+    this.router.get("/search", auth, this.search.bind(this));
     this.router.post("/", auth, requireRole("admin"), this.create.bind(this));
     this.router.put("/:id", auth, requireRole("admin"), this.update.bind(this));
     this.router.delete("/:id", auth, requireRole("admin"), this.remove.bind(this));
@@ -30,6 +31,16 @@ export default class MovieController {
       const movie = await this.movieService.getMovieById(req.params.id);
       if (!movie) return res.status(404).json({ error: 'Not found' });
       res.json(movie);
+    } catch (err) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+
+  async search(req, res) {
+    try {
+      const { title } = req.query;
+      const movies = await this.movieService.searchMovies(title);
+      res.json(movies);
     } catch (err) {
       res.status(500).json({ error: 'Server error' });
     }

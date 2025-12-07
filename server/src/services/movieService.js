@@ -16,6 +16,12 @@ export default class MovieService {
         return await this.movieModel.findById(id);
     }
 
+    async searchMovies(title) {
+        if (!title) return await this.getAllMovies();
+        const regex = new RegExp(title, 'i');
+        return await this.movieModel.find({ title: regex }).sort({ createdAt: -1 });
+    }
+
     async updateMovie(id, data) {
         return await this.movieModel.findByIdAndUpdate(id, data, { new: true });
     }
