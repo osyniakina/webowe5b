@@ -3,7 +3,7 @@ import { Schema, model } from "mongoose";
 const movieSchema = new Schema({
   title: { type: String, required: true },
   director: String,
-  year: Number,
+  year: String,
   description: String,
   genre: String
 });
